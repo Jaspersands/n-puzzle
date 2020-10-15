@@ -9,7 +9,7 @@ def LoadFromFile(filepath):
 
 	return [dimensions,state]
 
-def printFile(fileToPrint):
+def DebugPrint(fileToPrint):
 
 	for row in fileToPrint[1]:
 		print("{ ", end = '')
@@ -18,4 +18,4 @@ def printFile(fileToPrint):
 		print("}")
 
 hahahahaahahahaha = LoadFromFile("Test.txt")
-printFile(hahahahaahahahaha)
+DebugPrint(hahahahaahahahaha)
