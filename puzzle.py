@@ -5,8 +5,17 @@ def LoadFromFile(filepath):
 	for i in f:
 		state.append(i.strip().split("\t"))
 	dimensions = state.pop(0)[0]
-	print(state)
-	print(dimensions)
+	print("{} is a {}x{} grid".format(str(filepath),dimensions,dimensions))
 
+	return [dimensions,state]
 
-LoadFromFile("Untitled.txt")
+def printFile(fileToPrint):
+
+	for row in fileToPrint[1]:
+		print("{ ", end = '')
+		for number in row:
+			print(" {}\t".format(number), end = '')
+		print("}")
+
+hahahahaahahahaha = LoadFromFile("Test.txt")
+printFile(hahahahaahahahaha)
