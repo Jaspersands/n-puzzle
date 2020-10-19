@@ -1,5 +1,6 @@
 #Japer Dan Colin maybe Akis n Kunde
 import math
+import copy # I import this because without it, the Move functions weren't Pure
 
 # Takes a nested list and flattens it. We coded this in class at one point
 def flatten(nested_list):
@@ -25,7 +26,6 @@ def LoadFromFile(filepath):
 	dimensions = int(state.pop(0)[0])
 	# print("{} is a {}x{} grid".format(str(filepath),dimensions,dimensions))
 	state = flatten(state)
-	print(state)
 
 	return state
 
@@ -45,23 +45,13 @@ def DebugPrint(fileToPrint):
 
 	print("")
 
-# moving down
-def MoveDown(state):
-	modified = state
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
 
-	top = True if (index < dimensions) else False
 
-	if not top:
-		modified[index] = modified[index-dimensions]
-		modified[index-dimensions] = "*"
 
-	return modified
 
 # moving up
 def MoveUp(state):
-	modified = state
+	modified = copy.deepcopy(state)
 	dimensions = int(math.sqrt(len(state)))
 	index = state.index("*")
 
@@ -73,8 +63,23 @@ def MoveUp(state):
 
 	return modified
 
+# moving down
+def MoveDown(state):
+	modified = copy.deepcopy(state)
+	dimensions = int(math.sqrt(len(state)))
+	index = state.index("*")
+
+	top = True if (index < dimensions) else False
+
+	if not top:
+		modified[index] = modified[index-dimensions]
+		modified[index-dimensions] = "*"
+
+	return modified
+
+# moving right
 def MoveRight(state):
-	modified = state
+	modified = copy.deepcopy(state)
 	dimensions = int(math.sqrt(len(state)))
 	index = state.index("*")
 
@@ -86,11 +91,11 @@ def MoveRight(state):
 
 	return modified
 
+# moving left
 def MoveLeft(state):
-	modified = state
+	modified = copy.deepcopy(state)
 	dimensions = int(math.sqrt(len(state)))
 	index = state.index("*")
-	print(dimensions)
 
 	right = True if ((index + 1) % dimensions == 0) else False
 
@@ -101,28 +106,40 @@ def MoveLeft(state):
 	return modified
 
 
+
+
 # Takes game state, returns iterable containing adjacent states
 def ComputeNeighbors(state):
 	dimensions = int(math.sqrt(len(state)))
 	index = state.index("*")
+	possibleStates = []
 
+	if not MoveRight(state) == state:
+		yes = (MoveRight(state)[index], MoveRight(state))
+		possibleStates.append(yes)
+		# DebugPrint(MoveRight(state))
+	if not MoveLeft(state) == state:
+		yes = (MoveLeft(state)[index], MoveLeft(state))
+		possibleStates.append(yes)
+		# DebugPrint(MoveLeft(state))
+	if not MoveUp(state) == state:
+		yes = (MoveUp(state)[index], MoveUp(state))
+		possibleStates.append(yes)
+		# DebugPrint(MoveUp(state))
+	if not MoveDown(state) == state:
+		yes = (MoveDown(state)[index], MoveDown(state))
+		possibleStates.append(yes)
+		# DebugPrint(MoveDown(state))
 
-	# Determines where the piece is on the board
+	print(possibleStates)
 
-
-
-
-
-
-
+def IsGoal(state):
+	goal = [str(n+1) for n in range(len(state)-1)]
+	goal.append("*")
+	return True if state == goal else False
 
 
 pee = LoadFromFile("Test.txt")
-print(pee)
-DebugPrint(pee)
-DebugPrint(MoveLeft(pee))
-DebugPrint(MoveRight(pee))
-DebugPrint(MoveUp(pee))
-DebugPrint(MoveDown(pee))
 
-# ComputeNeighbors(hahahahaahahahaha)
+DebugPrint(pee)
+print(IsGoal(pee))
