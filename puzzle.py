@@ -24,15 +24,35 @@ def LoadFromFile(filepath):
 	for i in f:
 		state.append(i.strip().split("\t" or "\n"))
 	dimensions = int(state.pop(0)[0])
-	# print("{} is a {}x{} grid".format(str(filepath),dimensions,dimensions))
+
 	state = flatten(state)
 
-	return state
+	valid = True
 
-	# WE need an error thing to detect wrong things
+	# Troubleshooting errors
+	if len(state) != dimensions**2: # Not proper rows and columns
+		valid = False
+		print("You don't have {} rows and {} columns".format(dimensions,dimensions))
+		return None
+	if state.count("0") == 0 and state.count("*") == 0: # No empty spaces
+		valid = False
+		print("You need an empty space")
+	if state.count("0") > 0 and state.count("*") > 0: # both "0" and "*"
+		valid = False
+		print("You have too many empty spaces")
+	if state.count("0") > 1 or state.count("*") > 1: # too many of "*"" or "0"
+		valid = False
+		print("You have too many empty spaces too")
+
+	return state if valid else None
+
+
 
 # Prints game state
 def DebugPrint(fileToPrint):
+	if(fileToPrint == None):
+		print("Gimme a proper game state ya dipshit")
+		return
 	dimensions = int(math.sqrt(len(fileToPrint)))
 	state = fileToPrint
 	print("")
@@ -142,4 +162,3 @@ def IsGoal(state):
 pee = LoadFromFile("Test.txt")
 
 DebugPrint(pee)
-print(IsGoal(pee))
