@@ -34,17 +34,14 @@ def LoadFromFile(filepath):
 		valid = False
 		print("You don't have {} rows and {} columns".format(dimensions,dimensions))
 		return None
-	if state.count("0") == 0 and state.count("*") == 0: # No empty spaces
+	if state.count("*") == 0: # No empty spaces
 		valid = False
 		print("You need an empty space")
-	if state.count("0") > 0 and state.count("*") > 0: # both "0" and "*"
+	if state.count("*") > 1: # both "0" and "*"
 		valid = False
 		print("You have too many empty spaces")
-	if state.count("0") > 1 or state.count("*") > 1: # too many of "*"" or "0"
-		valid = False
-		print("You have too many empty spaces too")
 
-	return state if valid else None
+	return ("*", state) if valid else None
 
 
 
@@ -53,8 +50,9 @@ def DebugPrint(fileToPrint):
 	if(fileToPrint == None):
 		print("Gimme a proper game state ya dipshit")
 		return
-	dimensions = int(math.sqrt(len(fileToPrint)))
-	state = fileToPrint
+	dimensions = int(math.sqrt(len(fileToPrint[1])))
+	state = fileToPrint[1]
+	print()
 	print("")
 	for split in range(dimensions):
 		for digit in range(dimensions):
@@ -71,94 +69,130 @@ def DebugPrint(fileToPrint):
 
 # moving up
 def MoveUp(state):
-	modified = copy.deepcopy(state)
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
+	modified = copy.deepcopy(state[1])
+	dimensions = int(math.sqrt(len(modified)))
+	index = modified.index("*")
 
 	bottom = True if (index > (dimensions**2 - dimensions)) else False
-
 	if not bottom:
 		modified[index] = modified[index+dimensions]
 		modified[index+dimensions] = "*"
+		return modified[index], modified
+	else:
+		return None
 
-	return modified
+
 
 # moving down
 def MoveDown(state):
-	modified = copy.deepcopy(state)
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
+	board = state[1]
+	modified = copy.deepcopy(board)
+	dimensions = int(math.sqrt(len(board)))
+	index = board.index("*")
 
 	top = True if (index < dimensions) else False
 
 	if not top:
 		modified[index] = modified[index-dimensions]
 		modified[index-dimensions] = "*"
-
-	return modified
+		return modified[index], modified
+	else:
+		return None
 
 # moving right
 def MoveRight(state):
-	modified = copy.deepcopy(state)
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
+	board = state[1]
+	modified = copy.deepcopy(board)
+	dimensions = int(math.sqrt(len(board)))
+	index = board.index("*")
 
 	left = True if (index % dimensions == 0) else False
 
 	if not left:
 		modified[index] = modified[index-1]
 		modified[index-1] = "*"
-
-	return modified
+		return modified[index], modified
+	else:
+		return None
 
 # moving left
 def MoveLeft(state):
-	modified = copy.deepcopy(state)
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
+	board = state[1]
+	modified = copy.deepcopy(board)
+	dimensions = int(math.sqrt(len(board)))
+	index = board.index("*")
 
 	right = True if ((index + 1) % dimensions == 0) else False
 
 	if not right:
 		modified[index] = modified[index+1]
 		modified[index+1] = "*"
+		return modified[index], modified
+	else:
+		return None
 
-	return modified
 
 
-
-
-# Takes game state, returns iterable containing adjacent states
+# Takes tuple of (last_move, state), returns iterable containing adjacent states
 def ComputeNeighbors(state):
-	dimensions = int(math.sqrt(len(state)))
-	index = state.index("*")
+	if(state == None):
+		print("Gimme a proper game state ya dipshit")
+		return
+	dimensions = int(math.sqrt(len(state[1])))
+	last = state[0]
+	board = copy.deepcopy(state)
+	index = board.index("*")
 	possibleStates = []
 
-	if not MoveRight(state) == state:
-		yes = (MoveRight(state)[index], MoveRight(state))
-		possibleStates.append(yes)
-		# DebugPrint(MoveRight(state))
-	if not MoveLeft(state) == state:
-		yes = (MoveLeft(state)[index], MoveLeft(state))
-		possibleStates.append(yes)
-		# DebugPrint(MoveLeft(state))
-	if not MoveUp(state) == state:
-		yes = (MoveUp(state)[index], MoveUp(state))
-		possibleStates.append(yes)
-		# DebugPrint(MoveUp(state))
-	if not MoveDown(state) == state:
-		yes = (MoveDown(state)[index], MoveDown(state))
-		possibleStates.append(yes)
-		# DebugPrint(MoveDown(state))
+
+	if not MoveRight(board) == None:
+		possibleStates.append(MoveRight(board))
+		DebugPrint(MoveRight(board))
+	if not MoveLeft(board) == None:
+		possibleStates.append(MoveLeft(board))
+		DebugPrint(MoveLeft(board))
+	if not MoveUp(board) == None:
+		possibleStates.append(MoveUp(board))
+		DebugPrint(MoveUp(board))
+	if not MoveDown(board) == None:
+		possibleStates.append(MoveDown(board))
+		DebugPrint(MoveDown(board))
 
 	print(possibleStates)
 
+# is this the goal state
 def IsGoal(state):
 	goal = [str(n+1) for n in range(len(state)-1)]
 	goal.append("*")
 	return True if state == goal else False
 
+# Breadth first search
+def BFS(state):
+	frontier = copy.deepcopy(state)
+	discovered = set(state)
+	parents = {} # dict
+
+	while frontier is not None:
+		current_state = frontier.pop(0)
+		discovered.add(current_state)
+
+		if IsGoal(current_state):
+			# return the path you need by backtracking in parents
+			return parents
+
+		for neighbor in ComputeNeighbors(current_state):
+			if neighbor not in discovered:
+				frontier.append(neighbor)
+				discovered.add(neighbor)
+				parents[neighbor] = current_state
+
+
+
+
 
 pee = LoadFromFile("Test.txt")
 
-DebugPrint(pee)
+
+
+ComputeNeighbors(pee)
+BFS(pee)
