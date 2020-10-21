@@ -168,9 +168,9 @@ def IsGoal(state):
 
 # Breadth first search
 def BFS(state):
-	frontier = copy.deepcopy(state)
+	frontier = [state]
 	discovered = set(state)
-	parents = {} # dict
+	parents = {state: None} # dict
 
 	while frontier is not None:
 		current_state = frontier.pop(0)
