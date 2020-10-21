@@ -4,18 +4,18 @@ import copy # I import this because without it, the Move functions weren't Pure
 
 # Takes a nested list and flattens it. We coded this in class at one point
 def flatten(nested_list):
-    flat_list = []
+	flat_list = []
 
-    def flatten_func(sublist):
-        for element in sublist:
-            if isinstance(element, list):
-                flatten_func(element)
-            else:
-                flat_list.append(element)
+	def flatten_func(sublist):
+		for element in sublist:
+			if isinstance(element, list):
+				flatten_func(element)
+			else:
+				flat_list.append(element)
 
 
-    flatten_func(nested_list)
-    return flat_list
+	flatten_func(nested_list)
+	return flat_list
 
 # Makes tuple (dimensions, empty location, state)
 def LoadFromFile(filepath):
@@ -166,33 +166,34 @@ def IsGoal(state):
 	goal.append("*")
 	return True if state == goal else False
 
-# Breadth first search
+# Breadth first search. Takes gamestate in tuple (last_move, current board)
 def BFS(state):
+	# print(state)
 	frontier = [state]
-	discovered = set(state)
-	parents = {state: None} # dict
+	discovered = set(state[1])
+	parents = {str(state[1]): None} # dict
+	tiles_moved = {str(state[1]): None} # tile moves
 
 	while frontier is not None:
 		current_state = frontier.pop(0)
-		discovered.add(current_state)
+		discovered.add(current_state[1]) # adds tuple
 
 		if IsGoal(current_state):
 			# return the path you need by backtracking in parents
 			return parents
 
-		for neighbor in ComputeNeighbors(current_state):
+		for tile, neighbor in ComputeNeighbors(current_state):
 			if neighbor not in discovered:
 				frontier.append(neighbor)
-				discovered.add(neighbor)
+				discovered.add(tuple(tile, neighbor)) # adds list
 				parents[neighbor] = current_state
+				tiles_moved[neighbor] = tile
 
 
 
 
 
-pee = LoadFromFile("Test.txt")
+pee = LoadFromFile("Test copy.txt")
+print("pee" +str(pee))
 
-
-
-ComputeNeighbors(pee)
 BFS(pee)
