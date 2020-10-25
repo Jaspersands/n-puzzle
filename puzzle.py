@@ -1,199 +1,163 @@
-#Japer Dan Colin maybe Akis n Kunde
+#revised 10/22 to use correct gamestate structure
 import math
-import copy # I import this because without it, the Move functions weren't Pure
+import copy
+import re
 
-# Takes a nested list and flattens it. We coded this in class at one point
-def flatten(nested_list):
-	flat_list = []
+#is necessary?
+def flatten(nList):
+	return [item for temp in nList for item in flatten(temp)] if isinstance(nList, list) else [nList]
 
-	def flatten_func(sublist):
-		for element in sublist:
-			if isinstance(element, list):
-				flatten_func(element)
-			else:
-				flat_list.append(element)
-
-
-	flatten_func(nested_list)
-	return flat_list
-
-# Makes tuple (dimensions, empty location, state)
+#note ALL GAMESTATES SAVED IN TUPLE AS (dimensions, last tile moved, current board list)
 def LoadFromFile(filepath):
+	global goal
 	state = []
 	f = open(filepath, "r")
-	for i in f:
-		state.append(i.strip().split("\t" or "\n"))
+	for value in f:
+		state.append(value.strip().split("\t" or "\n"))
 	dimensions = int(state.pop(0)[0])
-
 	state = flatten(state)
-
 	valid = True
 
-	# Troubleshooting errors
-	if len(state) != dimensions**2: # Not proper rows and columns
+	# Catch error
+	if len(state) != dimensions**2:
 		valid = False
 		print("You don't have {} rows and {} columns".format(dimensions,dimensions))
 		return None
-	if state.count("*") == 0: # No empty spaces
+	if state.count("*") == 0:
 		valid = False
 		print("You need an empty space")
-	if state.count("*") > 1: # both "0" and "*"
+	if state.count("*") > 1:
 		valid = False
 		print("You have too many empty spaces")
 
-	return ("*", state) if valid else None
+	goalBoard = [str(n+1) for n in range(len(state)-1)]
+	goalBoard.append("*")
+	goal = dimensions, None, tuple(goalBoard)
 
+	return dimensions, None, tuple(state) if valid else None #is packaged into tuple by default on return with [0] = dims, [1] = move tile, [2] = board
 
+#helper function for board-position rearrangement
+def movePlace(board, index, dimensions):
+	board = list(board)
+	board[index] = board[index+dimensions]
+	board[index+dimensions] = "*"
+	return tuple(board)
 
-# Prints game state
-def DebugPrint(fileToPrint):
-	if(fileToPrint == None):
-		print("Gimme a proper game state ya dipshit")
-		return
-	dimensions = int(math.sqrt(len(fileToPrint[1])))
-	state = fileToPrint[1]
-	print()
-	print("")
-	for split in range(dimensions):
-		for digit in range(dimensions):
-			index = dimensions * split + digit
-			print(" {}\t".format(state[index]), end = '')
+#move 4d functions
+def move(state, dir):
+	board = copy.deepcopy(state[2])
+	emptIndex = board.index("*")
+	if dir == "up":
+		if emptIndex >= (state[0]**2 - state[0]):
+			return "bad"
+		else:
+			return state[0], board[emptIndex + state[0]], movePlace(board, emptIndex, state[0])
+	elif dir == "down":
+		if emptIndex < state[0]:
+			return "bad"
+		else:
+			return state[0], board[emptIndex - state[0]], movePlace(board, emptIndex, -state[0])
+	elif dir == "right":
+		if emptIndex % state[0] == 0:
+			return "bad"
+		else:
+			return state[0], board[emptIndex - 1], movePlace(board, emptIndex, -1)
+	elif dir == "left":
+		if (emptIndex + 1) % state[0] == 0:
+			return "bad"
+		else:
+			return state[0], board[emptIndex + 1], movePlace(board, emptIndex, 1)
+	#catch error
+	print("not valid direction")
+	return None
 
-		print("")
-
-	print("")
-
-
-
-
-
-# moving up
-def MoveUp(state):
-	modified = copy.deepcopy(state[1])
-	dimensions = int(math.sqrt(len(modified)))
-	index = modified.index("*")
-
-	bottom = True if (index > (dimensions**2 - dimensions)) else False
-	if not bottom:
-		modified[index] = modified[index+dimensions]
-		modified[index+dimensions] = "*"
-		return modified[index], modified
-	else:
-		return None
-
-
-
-# moving down
-def MoveDown(state):
-	board = state[1]
-	modified = copy.deepcopy(board)
-	dimensions = int(math.sqrt(len(board)))
-	index = board.index("*")
-
-	top = True if (index < dimensions) else False
-
-	if not top:
-		modified[index] = modified[index-dimensions]
-		modified[index-dimensions] = "*"
-		return modified[index], modified
-	else:
-		return None
-
-# moving right
-def MoveRight(state):
-	board = state[1]
-	modified = copy.deepcopy(board)
-	dimensions = int(math.sqrt(len(board)))
-	index = board.index("*")
-
-	left = True if (index % dimensions == 0) else False
-
-	if not left:
-		modified[index] = modified[index-1]
-		modified[index-1] = "*"
-		return modified[index], modified
-	else:
-		return None
-
-# moving left
-def MoveLeft(state):
-	board = state[1]
-	modified = copy.deepcopy(board)
-	dimensions = int(math.sqrt(len(board)))
-	index = board.index("*")
-
-	right = True if ((index + 1) % dimensions == 0) else False
-
-	if not right:
-		modified[index] = modified[index+1]
-		modified[index+1] = "*"
-		return modified[index], modified
-	else:
-		return None
-
-
-
-# Takes tuple of (last_move, state), returns iterable containing adjacent states
+#checks validity of move() in 4 cardinal directions and returns possible moves
 def ComputeNeighbors(state):
-	if(state == None):
-		print("Gimme a proper game state ya dipshit")
-		return
-	dimensions = int(math.sqrt(len(state[1])))
-	last = state[0]
-	board = copy.deepcopy(state)
-	index = board.index("*")
-	possibleStates = []
+	return tuple([item for item in [move(state, "up"), move(state, "down"), move(state, "right"), move(state, "left")] if item != "bad"])
 
-
-	if not MoveRight(board) == None:
-		possibleStates.append(MoveRight(board))
-		DebugPrint(MoveRight(board))
-	if not MoveLeft(board) == None:
-		possibleStates.append(MoveLeft(board))
-		DebugPrint(MoveLeft(board))
-	if not MoveUp(board) == None:
-		possibleStates.append(MoveUp(board))
-		DebugPrint(MoveUp(board))
-	if not MoveDown(board) == None:
-		possibleStates.append(MoveDown(board))
-		DebugPrint(MoveDown(board))
-
-	print(possibleStates)
-
-# is this the goal state
+#is goal?
 def IsGoal(state):
-	goal = [str(n+1) for n in range(len(state)-1)]
-	goal.append("*")
-	return True if state == goal else False
+	return True if state[2] == goal[2] else False
 
-# Breadth first search. Takes gamestate in tuple (last_move, current board)
+#bfs algorithm for path search
 def BFS(state):
-	# print(state)
+	return FS(state, True)
+
+#dfs algorithm for path search
+def DFS(state):
+	return FS(state, False)
+
+#____ first search algorithm for path search - dfs and bfs call
+def FS(state, bfs):
 	frontier = [state]
-	discovered = set(state[1])
-	parents = {str(state[1]): None} # dict
-	tiles_moved = {str(state[1]): None} # tile moves
+	discovered = set(str(state[2]))
+	parents = {state: '0'}
 
-	while frontier is not None:
-		current_state = frontier.pop(0)
-		discovered.add(current_state[1]) # adds tuple
-
+	while frontier: #while len(frontier) > 0
+		current_state = frontier.pop(0) if bfs else frontier.pop()
+		if str(current_state[2]) not in discovered:
+			discovered.add(str(current_state[2]))
 		if IsGoal(current_state):
-			# return the path you need by backtracking in parents
-			return parents
+			return parents[current_state].split(',')[1:]
+		for neighbor_state in ComputeNeighbors(current_state):
+			if str(neighbor_state[2]) not in discovered:
+				print("neighbor_state" + str(neighbor_state))
+				frontier.append(neighbor_state)
+				discovered.add(str(neighbor_state[2]))
+				parents[neighbor_state] = parents[current_state]+','+neighbor_state[1]
+	return None
 
-		for tile, neighbor in ComputeNeighbors(current_state):
-			if neighbor not in discovered:
-				frontier.append(neighbor)
-				discovered.add(tuple(tile, neighbor)) # adds list
-				parents[neighbor] = current_state
-				tiles_moved[neighbor] = tile
+def IsIntersecting(discovered1, discovered2):
+	for i in discovered1.union(discovered2):
+		if i in discovered1 and i in discovered2:
+			return i
+	return None
 
+def BidirectionalSearch(state):
+	fwFrontier = [state]
+	bwFrontier = [goal]
+	fwDiscovered = set()
+	fwDiscovered.add(state)
+	bwDiscovered = set()
+	bwDiscovered.add(goal)
+	fwParents = {state: '0'}
+	bwParents = {goal: '0'}
+	while fwFrontier and bwFrontier: #while len whatever > 0 and len whatever > 0
+		#forward
+		currFwState = fwFrontier.pop(0)
+		if currFwState not in fwDiscovered:
+			fwDiscovered.add(currFwState)
+		for fwNeighbor in ComputeNeighbors(currFwState):
+			if fwNeighbor not in fwDiscovered:
+				print("fwNeighbor" + str(fwNeighbor))
+				fwFrontier.append(fwNeighbor)
+				fwDiscovered.add(fwNeighbor)
+				fwParents[fwNeighbor] = fwParents[currFwState]+','+fwNeighbor[1]
 
+		#backward
+		currBwState = bwFrontier.pop(0)
+		if currBwState not in bwDiscovered:
+			bwDiscovered.add(currBwState)
+		for bwNeighbor in ComputeNeighbors(currBwState):
+			if bwNeighbor not in bwDiscovered:
+				print("bwNeighbor" + str(bwNeighbor))
+				bwFrontier.append(bwNeighbor)
+				bwDiscovered.add(bwNeighbor)
+				bwParents[bwNeighbor] = bwParents[currBwState]+','+bwNeighbor[1]
 
+		#check solve
+		intersection = IsIntersecting(fwDiscovered, bwDiscovered)
+		if intersection:
+			fwList = fwParents[intersection].split(',')[1:]
+			bwList = bwParents[intersection].split(',')[1:]
+			if fwList[-1:] == bwList[-1:]:
+				fwList.pop()
+				bwList.pop()
+			fwList += bwList[::-1]
+			return fwList
 
+	return None
 
 pee = LoadFromFile("Test copy.txt")
-print("pee" +str(pee))
-
-BFS(pee)
+#print(BFS(pee))
+print(BidirectionalSearch(pee))
