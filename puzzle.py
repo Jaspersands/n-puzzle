@@ -74,6 +74,10 @@ def move(state, dir):
 def ComputeNeighbors(state):
 	return tuple([item for item in [move(state, "up"), move(state, "down"), move(state, "right"), move(state, "left")] if item != "bad"])
 
+#iS gOaL?
+def IsGoal(state):
+	return state[2] == goal[2]
+
 #comprehensive search function
 def search(state, mode, frontier, discovered, parents):
 	if mode == "Bidirectional":
@@ -95,7 +99,7 @@ def search(state, mode, frontier, discovered, parents):
 			cstate = frontier.pop(0) if mode == "BFS" else frontier.pop()
 			if cstate not in discovered:
 				discovered.add(cstate)
-			if cstate[2] == goal[2]:
+			if IsGoal(cstate):
 				return parents[cstate].split(',')[1:], discovered
 			for nstate in ComputeNeighbors(cstate):
 				if nstate not in discovered:
