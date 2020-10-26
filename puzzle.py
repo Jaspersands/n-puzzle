@@ -3,7 +3,6 @@ import math
 import copy
 import re
 
-#is necessary?
 def flatten(nList):
 	return [item for temp in nList for item in flatten(temp)] if isinstance(nList, list) else [nList]
 
@@ -75,88 +74,52 @@ def move(state, dir):
 def ComputeNeighbors(state):
 	return tuple([item for item in [move(state, "up"), move(state, "down"), move(state, "right"), move(state, "left")] if item != "bad"])
 
-#is goal?
-def IsGoal(state):
-	return True if state[2] == goal[2] else False
+#comprehensive search function
+def search(state, mode, frontier, discovered, parents):
+	if mode == "Bidirectional":
+		fFrontier = [state]
+		bFrontier = [goal]
+		fDisc = set()
+		fDisc.add(state)
+		bDisc = set()
+		bDisc.add(state)
+		while fFrontier and bFrontier:
+			fList, fDisc = search(state, "BFS", fFrontier, fDisc, {state: '0'})
+			bList, bDisc = search(goal, "BFS", bFrontier, bDisc, {goal: '0'})
+			for i in fDisc.union(bDisc):
+				if i in fDisc and i in bDisc:
+					return fList[:-1] + bList[:-1:-1] if fList[-1:] == bList[-1:] else fList + bList[::-1]
+			return None
+	else:
+		while frontier:
+			cstate = frontier.pop(0) if mode == "BFS" else frontier.pop()
+			if cstate not in discovered:
+				discovered.add(cstate)
+			if cstate[2] == goal[2]:
+				return parents[cstate].split(',')[1:], discovered
+			for nstate in ComputeNeighbors(cstate):
+				if nstate not in discovered:
+					print("nstate" + str(nstate))
+					frontier.append(nstate)
+					discovered.add(nstate)
+					parents[nstate] = parents[cstate]+','+nstate[1]
+		return None
 
-#bfs algorithm for path search
+#bfs
 def BFS(state):
-	return FS(state, True)
+	temp = set()
+	temp.add(state)
+	return search(state, "BFS", [state], temp, {state: '0'})[0]
 
-#dfs algorithm for path search
+#dfs
 def DFS(state):
-	return FS(state, False)
+	temp = set()
+	temp.add(state)
+	return search(state, "DFS", [state], temp, {state: '0'})[0]
 
-#____ first search algorithm for path search - dfs and bfs call
-def FS(state, bfs):
-	frontier = [state]
-	discovered = set(str(state[2]))
-	parents = {state: '0'}
-
-	while frontier: #while len(frontier) > 0
-		current_state = frontier.pop(0) if bfs else frontier.pop()
-		if str(current_state[2]) not in discovered:
-			discovered.add(str(current_state[2]))
-		if IsGoal(current_state):
-			return parents[current_state].split(',')[1:]
-		for neighbor_state in ComputeNeighbors(current_state):
-			if str(neighbor_state[2]) not in discovered:
-				print("neighbor_state" + str(neighbor_state))
-				frontier.append(neighbor_state)
-				discovered.add(str(neighbor_state[2]))
-				parents[neighbor_state] = parents[current_state]+','+neighbor_state[1]
-	return None
-
-def IsIntersecting(discovered1, discovered2):
-	for i in discovered1.union(discovered2):
-		if i in discovered1 and i in discovered2:
-			return i
-	return None
-
+#bidirectional
 def BidirectionalSearch(state):
-	fwFrontier = [state]
-	bwFrontier = [goal]
-	fwDiscovered = set()
-	fwDiscovered.add(state)
-	bwDiscovered = set()
-	bwDiscovered.add(goal)
-	fwParents = {state: '0'}
-	bwParents = {goal: '0'}
-	while fwFrontier and bwFrontier: #while len whatever > 0 and len whatever > 0
-		#forward
-		currFwState = fwFrontier.pop(0)
-		if currFwState not in fwDiscovered:
-			fwDiscovered.add(currFwState)
-		for fwNeighbor in ComputeNeighbors(currFwState):
-			if fwNeighbor not in fwDiscovered:
-				print("fwNeighbor" + str(fwNeighbor))
-				fwFrontier.append(fwNeighbor)
-				fwDiscovered.add(fwNeighbor)
-				fwParents[fwNeighbor] = fwParents[currFwState]+','+fwNeighbor[1]
-
-		#backward
-		currBwState = bwFrontier.pop(0)
-		if currBwState not in bwDiscovered:
-			bwDiscovered.add(currBwState)
-		for bwNeighbor in ComputeNeighbors(currBwState):
-			if bwNeighbor not in bwDiscovered:
-				print("bwNeighbor" + str(bwNeighbor))
-				bwFrontier.append(bwNeighbor)
-				bwDiscovered.add(bwNeighbor)
-				bwParents[bwNeighbor] = bwParents[currBwState]+','+bwNeighbor[1]
-
-		#check solve
-		intersection = IsIntersecting(fwDiscovered, bwDiscovered)
-		if intersection:
-			fwList = fwParents[intersection].split(',')[1:]
-			bwList = bwParents[intersection].split(',')[1:]
-			if fwList[-1:] == bwList[-1:]:
-				fwList.pop()
-				bwList.pop()
-			fwList += bwList[::-1]
-			return fwList
-
-	return None
+	return search(state, "Bidirectional", None, None, None)
 
 pee = LoadFromFile("Test copy.txt")
 #print(BFS(pee))
